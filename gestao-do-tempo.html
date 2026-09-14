@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Gestão do Tempo</title>
+<style>
+  :root{
+    --bg:#14161b;
+    --bg-elev:#191c22;
+    --panel:#20242b;
+    --panel-2:#252a32;
+    --border:#2b2f38;
+    --border-soft:#23262d;
+    --text:#edeef2;
+    --text-dim:#9aa1af;
+    --text-faint:#6b7280;
+    --accent:#00642c;
+    --accent-soft:rgba(0,100,44,.20);
+    --q1:#c1553d; --q1-soft:rgba(193,85,61,.18);
+    --q2:#4c9a6e; --q2-soft:rgba(76,154,110,.18);
+    --q3:#c99a3c; --q3-soft:rgba(201,154,60,.18);
+    --q4:#5b6472; --q4-soft:rgba(91,100,114,.22);
+    --danger:#d2604b; --danger-soft:rgba(210,96,75,.16);
+    --radius:12px;
+    --radius-sm:8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:76px;
+  }
+  #app{max-width:640px;margin:0 auto;min-height:100vh;}
+  .tabular{font-variant-numeric:tabular-nums;}
+
+  /* topbar */
+  .topbar{position:sticky;top:0;z-index:20;background:var(--bg-elev);border-bottom:1px solid var(--border);border-top:3px solid var(--accent);}
+  .topbar-inner{padding:16px 18px 14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .topbar-inner h1{font-size:19px;margin:0;font-weight:650;letter-spacing:-.01em;}
+  .topbar-inner h1::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);margin-right:8px;}
+  .topbar-date{font-size:12.5px;color:var(--text-faint);white-space:nowrap;}
+
+  main{padding:16px 14px 8px;}
+  .tab{display:none;}
+  .tab.active{display:block;}
+
+  /* cards */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+  .card h2{font-size:14.5px;margin:0 0 3px;font-weight:650;}
+  .card .hint{font-size:12.5px;color:var(--text-faint);margin:0 0 14px;line-height:1.5;}
+
+  /* form */
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:500;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  input[type=text],input[type=date],input[type=time],select,textarea{
+    width:100%;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);
+    border-radius:var(--radius-sm);padding:10px 11px;font-size:14.5px;font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:44px;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent);}
+  .duracao-preview{
+    display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;
+    background:var(--accent-soft);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);
+  }
+  .duracao-preview strong{color:var(--text);font-size:14.5px;}
+  .duracao-preview.warn{background:var(--danger-soft);color:var(--danger);}
+
+  .btn{
+    appearance:none;border:none;border-radius:var(--radius-sm);padding:11px 16px;font-size:14.5px;
+    font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .btn-primary{background:var(--accent);color:#eafcef;width:100%;}
+  .btn-primary:active{opacity:.85;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-dim);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .btn-primary{flex:1;}
+  .btn-icon{background:none;border:none;color:var(--text-faint);cursor:pointer;padding:4px 6px;font-size:13px;}
+  .btn-icon:hover{color:var(--text);}
+
+  select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%239aa1af'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;}
+
+  /* quadrant chip */
+  .qchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;padding:3px 8px;border-radius:999px;}
+  .qchip.q1{background:var(--q1-soft);color:var(--q1);}
+  .qchip.q2{background:var(--q2-soft);color:var(--q2);}
+  .qchip.q3{background:var(--q3-soft);color:var(--q3);}
+  .qchip.q4{background:var(--q4-soft);color:var(--q4);}
+
+  /* entry list */
+  .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .list-head .field{margin:0;flex:1;max-width:170px;}
+  .day-total{font-size:12.5px;color:var(--text-dim);}
+  .day-total strong{color:var(--text);}
+  .entry{border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;margin-bottom:8px;background:var(--bg-elev);}
+  .entry-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .entry-time{font-size:12.5px;color:var(--text-dim);}
+  .entry-time strong{color:var(--text);}
+  .entry-title{font-size:14.5px;font-weight:550;margin:0 0 3px;}
+  .entry-sub{font-size:12.5px;color:var(--text-faint);margin:0;}
+  .entry-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+  .thief-tag{font-size:11px;color:var(--text-faint);border:1px solid var(--border);border-radius:999px;padding:2px 8px;}
+  .entry-obs{font-size:12.5px;color:var(--text-dim);margin-top:6px;font-style:italic;}
+  .entry-actions{display:flex;gap:2px;}
+  .empty{text-align:center;padding:26px 10px;color:var(--text-faint);font-size:13.5px;}
+
+  /* dashboard */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat{background:var(--bg-elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:12px;}
+  .stat .num{font-size:22px;font-weight:700;letter-spacing:-.01em;}
+  .stat .lbl{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .qrow{display:grid;grid-template-columns:38px 1fr 74px;align-items:center;gap:10px;margin-bottom:10px;}
+  .qrow:last-child{margin-bottom:0;}
+  .qbar-track{height:8px;border-radius:999px;background:var(--border-soft);overflow:hidden;}
+  .qbar-fill{height:100%;border-radius:999px;}
+  .qrow .qvals{font-size:12px;color:var(--text-dim);text-align:right;}
+  .qrow .qvals strong{color:var(--text);}
+  .daytable{width:100%;border-collapse:collapse;font-size:13px;}
+  .daytable th{text-align:left;font-size:11px;color:var(--text-faint);font-weight:600;padding:0 6px 8px;}
+  .daytable td{padding:7px 6px;border-top:1px solid var(--border-soft);}
+  .daytable td:not(:first-child),.daytable th:not(:first-child){text-align:right;}
+
+  /* ações */
+  .status-badge{font-size:11px;font-weight:650;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .status-Aberta{background:var(--q3-soft);color:var(--q3);}
+  .status-Em-andamento{background:var(--accent-soft);color:var(--accent);}
+  .status-Concluída{background:var(--q2-soft);color:var(--q2);}
+  .acao{border:1px solid var(--border-soft);border-left:3px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;margin-bottom:8px;background:var(--bg-elev);}
+  .acao.atrasada{border-left-color:var(--danger);}
+  .acao-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:5px;}
+  .acao-title{font-size:14px;font-weight:550;margin:0;}
+  .acao-meta{font-size:12px;color:var(--text-faint);display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:6px;}
+  .acao-meta .atraso{color:var(--danger);font-weight:600;}
+
+  /* tabbar */
+  .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--bg-elev);border-top:1px solid var(--border);display:flex;z-index:30;}
+  .tabbar-inner{max-width:640px;margin:0 auto;display:flex;width:100%;}
+  .tabbtn{flex:1;background:none;border:none;padding:9px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-faint);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;}
+  .tabbtn.active{color:var(--accent);}
+  .tabbtn.active svg{background:var(--accent-soft);border-radius:8px;}
+  .tabbtn svg{width:20px;height:20px;padding:2px;box-sizing:content-box;}
+
+  .loading{padding:40px 20px;text-align:center;color:var(--text-faint);font-size:13.5px;}
+  ::placeholder{color:var(--text-faint);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1>Gestão do Tempo</h1>
+      <span class="topbar-date" id="topbarDate"></span>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===== REGISTRO ===== -->
+    <section id="tab-registro" class="tab active">
+      <div class="card">
+        <h2 id="formTitle">Registrar atividade</h2>
+        <p class="hint">Informe início e fim — a duração é calculada automaticamente.</p>
+        <form id="entryForm">
+          <div class="field">
+            <label for="f-data">Data</label>
+            <input type="date" id="f-data" required>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="f-inicio">Início</label>
+              <input type="time" id="f-inicio" required>
+            </div>
+            <div class="field">
+              <label for="f-fim">Fim</label>
+              <input type="time" id="f-fim" required>
+            </div>
+          </div>
+          <div class="duracao-preview" id="duracaoPreview">Preencha início e fim para calcular a duração.</div>
+
+          <div class="field" style="margin-top:12px;">
+            <label for="f-planejada">Atividade planejada</label>
+            <input type="text" id="f-planejada" placeholder="O que estava previsto para este horário">
+          </div>
+          <div class="field">
+            <label for="f-realizada">Atividade realizada</label>
+            <input type="text" id="f-realizada" placeholder="O que de fato foi feito" required>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="f-quadrante">Quadrante</label>
+              <select id="f-quadrante" required>
+                <option value="Q1">Q1 — Executar</option>
+                <option value="Q2">Q2 — Agendar</option>
+                <option value="Q3">Q3 — Delegar</option>
+                <option value="Q4">Q4 — Eliminar</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-ladrao">Ladrão do tempo</label>
+              <select id="f-ladrao">
+                <option>Nenhum</option>
+                <option>Interrupção</option>
+                <option>Falta de planejamento</option>
+                <option>Centralização</option>
+                <option>Procrastinação</option>
+                <option>Reunião improdutiva</option>
+                <option>Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-obs">Observações</label>
+            <textarea id="f-obs" placeholder="Opcional"></textarea>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary" id="submitBtn">Registrar atividade</button>
+            <button type="button" class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="list-head">
+          <h2 style="margin:0;">Lançamentos do dia</h2>
+          <div class="field">
+            <input type="date" id="viewDate">
+          </div>
+        </div>
+        <div class="day-total" id="dayTotal" style="margin-bottom:10px;"></div>
+        <div id="entryList"></div>
+      </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="tab-dashboard" class="tab">
+      <div class="card">
+        <h2>Painel do período</h2>
+        <p class="hint">Selecione o tipo de período e uma data de referência.</p>
+        <div class="row2">
+          <div class="field">
+            <label for="d-periodo">Período</label>
+            <select id="d-periodo">
+              <option value="dia">Dia</option>
+              <option value="semana" selected>Semana</option>
+              <option value="mes">Mês</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="d-ref">Data de referência</label>
+            <input type="date" id="d-ref">
+          </div>
+        </div>
+        <div class="hint tabular" id="rangeLabel" style="margin:0;"></div>
+      </div>
+
+      <div class="card">
+        <div class="stat-grid">
+          <div class="stat"><div class="num tabular" id="statAtividades">0</div><div class="lbl">Atividades</div></div>
+          <div class="stat"><div class="num tabular" id="statHoras">0h</div><div class="lbl">Horas registradas</div></div>
+          <div class="stat"><div class="num tabular" id="statQ2">0%</div><div class="lbl">% no Q2</div></div>
+          <div class="stat"><div class="num tabular" id="statAbertas">0</div><div class="lbl">Ações abertas</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Distribuição por quadrante</h2>
+        <p class="hint">Minutos, horas e % do total registrado no período.</p>
+        <div id="qBreakdown"></div>
+      </div>
+
+      <div class="card">
+        <h2>Por dia</h2>
+        <div style="overflow-x:auto;">
+          <table class="daytable" id="dayTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== AÇÕES ===== -->
+    <section id="tab-acoes" class="tab">
+      <div class="card">
+        <h2>Ações de melhoria e mudança de quadrante</h2>
+        <p class="hint">Registre melhorias que reduzam Q1, Q3 e Q4 e aumentem o tempo planejado no Q2.</p>
+        <div class="stat-grid">
+          <div class="stat"><div class="num tabular" id="acAbertas">0</div><div class="lbl">Ações abertas</div></div>
+          <div class="stat"><div class="num tabular" id="acAtrasadas">0</div><div class="lbl">Atrasadas</div></div>
+          <div class="stat"><div class="num tabular" id="acDestinoQ2">0</div><div class="lbl">Com destino Q2</div></div>
+          <div class="stat"><div class="num tabular" id="acConcluidas">0</div><div class="lbl">Concluídas</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 id="acFormTitle">Nova ação</h2>
+        <form id="acaoForm">
+          <div class="row2">
+            <div class="field">
+              <label for="a-identificada">Identificada em</label>
+              <input type="date" id="a-identificada" required>
+            </div>
+            <div class="field">
+              <label for="a-prazo">Prazo</label>
+              <input type="date" id="a-prazo">
+            </div>
+          </div>
+          <div class="field">
+            <label for="a-acao">Ação de melhoria</label>
+            <input type="text" id="a-acao" required placeholder="O que será feito">
+          </div>
+          <div class="field">
+            <label for="a-causa">Causa / ladrão do tempo</label>
+            <input type="text" id="a-causa" placeholder="Ex.: Interrupção, Falta de planejamento">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="a-qatual">Quadrante atual</label>
+              <select id="a-qatual"><option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option></select>
+            </div>
+            <div class="field">
+              <label for="a-qdesejado">Quadrante desejado</label>
+              <select id="a-qdesejado"><option value="Q1">Q1</option><option value="Q2" selected>Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option></select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="a-responsavel">Responsável</label>
+              <input type="text" id="a-responsavel">
+            </div>
+            <div class="field">
+              <label for="a-status">Status</label>
+              <select id="a-status"><option>Aberta</option><option>Em andamento</option><option>Concluída</option></select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="a-beneficio">Benefício esperado</label>
+            <input type="text" id="a-beneficio" placeholder="Opcional">
+          </div>
+          <div class="field">
+            <label for="a-evidencia">Evidência / resultado</label>
+            <textarea id="a-evidencia" placeholder="Opcional"></textarea>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary" id="acSubmitBtn">Adicionar ação</button>
+            <button type="button" class="btn btn-ghost" id="acCancelBtn" style="display:none;">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Ações registradas</h2>
+        <div id="acaoList"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <div class="tabbar-inner">
+      <button class="tabbtn active" data-tab="registro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Registro
+      </button>
+      <button class="tabbtn" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        Dashboard
+      </button>
+      <button class="tabbtn" data-tab="acoes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+        Ações
+      </button>
+    </div>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Metadados de quadrante ----------
+  var QUADRANTES = {
+    Q1: {label:"Executar",   desc:"Importante e urgente — reduzir crises",             cssvar:"--q1"},
+    Q2: {label:"Agendar",    desc:"Importante e não urgente — foco estratégico",       cssvar:"--q2"},
+    Q3: {label:"Delegar",    desc:"Urgente e pouco importante — reduzir interrupções", cssvar:"--q3"},
+    Q4: {label:"Eliminar",   desc:"Pouco importante e não urgente — evitar desperdício",cssvar:"--q4"}
+  };
+
+  // ---------- Estado ----------
+  var entries = [];
+  var acoes = [];
+  var editingEntryId = null;
+  var editingAcaoId = null;
+
+  // ---------- Utilidades de data/hora ----------
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function todayISO(){
+    var d = new Date();
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+  function isoToLabel(iso){
+    var p = iso.split("-");
+    return p[2]+"/"+p[1];
+  }
+  // duração em minutos entre dois horários HH:MM (assume mesmo dia; se fim <= início, considera virada de dia)
+  function calcMinutos(inicio, fim){
+    var i = inicio.split(":").map(Number), f = fim.split(":").map(Number);
+    var mIni = i[0]*60+i[1], mFim = f[0]*60+f[1];
+    var diff = mFim - mIni;
+    if(diff <= 0) diff += 24*60;
+    return diff;
+  }
+  function fmtHoras(min){
+    var h = min/60;
+    return (Math.round(h*10)/10) + "h";
+  }
+  function fmtDuracao(min){
+    var h = Math.floor(min/60), m = min%60;
+    if(h===0) return m+" min";
+    if(m===0) return h+"h";
+    return h+"h"+pad(m);
+  }
+
+  // início/fim da semana (segunda a domingo) contendo a data de referência
+  function weekRange(refISO){
+    var d = new Date(refISO+"T00:00:00");
+    var day = d.getDay(); // 0=dom
+    var diffToMonday = (day===0) ? -6 : (1-day);
+    var monday = new Date(d); monday.setDate(d.getDate()+diffToMonday);
+    var sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+    return [isoOf(monday), isoOf(sunday)];
+  }
+  function monthRange(refISO){
+    var d = new Date(refISO+"T00:00:00");
+    var start = new Date(d.getFullYear(), d.getMonth(), 1);
+    var end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    return [isoOf(start), isoOf(end)];
+  }
+  function isoOf(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function listDatesBetween(startISO, endISO){
+    var out = [];
+    var cur = new Date(startISO+"T00:00:00");
+    var end = new Date(endISO+"T00:00:00");
+    while(cur <= end){ out.push(isoOf(cur)); cur.setDate(cur.getDate()+1); }
+    return out;
+  }
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+  // ---------- Persistência (Supabase) ----------
+  // Preencha com os dados do seu projeto Supabase (Project Settings > API).
+  // A anon key é pública por design — a proteção real vem das políticas de RLS
+  // configuradas no banco (ver supabase-schema.sql).
+  var SUPABASE_URL = "COLOQUE_SUA_SUPABASE_URL_AQUI";
+  var SUPABASE_ANON_KEY = "COLOQUE_SUA_SUPABASE_ANON_KEY_AQUI";
+
+  var supabase = null;
+  var STORAGE_OK = false;
+  try{
+    if(window.supabase && SUPABASE_URL.indexOf("COLOQUE_") !== 0){
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      STORAGE_OK = true;
+    }
+  }catch(e){ console.error("Falha ao iniciar Supabase.", e); }
+
+  // mapeamento camelCase (app) <-> snake_case (banco)
+  function entryToRow(e){
+    return { id:e.id, data:e.data, inicio:e.inicio, fim:e.fim, minutos:e.minutos,
+      planejada:e.planejada, realizada:e.realizada, quadrante:e.quadrante, ladrao:e.ladrao, obs:e.obs };
+  }
+  function rowToEntry(r){
+    return { id:r.id, data:r.data, inicio:r.inicio, fim:r.fim, minutos:r.minutos,
+      planejada:r.planejada||"", realizada:r.realizada||"", quadrante:r.quadrante, ladrao:r.ladrao||"Nenhum", obs:r.obs||"" };
+  }
+  function acaoToRow(a){
+    return { id:a.id, identificada_em:a.identificadaEm, acao:a.acao, causa:a.causa,
+      quadrante_atual:a.quadranteAtual, quadrante_desejado:a.quadranteDesejado, responsavel:a.responsavel,
+      prazo:a.prazo || null, status:a.status, beneficio:a.beneficio, evidencia:a.evidencia };
+  }
+  function rowToAcao(r){
+    return { id:r.id, identificadaEm:r.identificada_em, acao:r.acao||"", causa:r.causa||"",
+      quadranteAtual:r.quadrante_atual, quadranteDesejado:r.quadrante_desejado, responsavel:r.responsavel||"",
+      prazo:r.prazo||"", status:r.status, beneficio:r.beneficio||"", evidencia:r.evidencia||"" };
+  }
+
+  function loadAll(){
+    if(!STORAGE_OK){
+      console.error("Supabase não configurado — preencha SUPABASE_URL e SUPABASE_ANON_KEY.");
+      return Promise.resolve();
+    }
+    var p1 = supabase.from("entries").select("*").order("data").order("inicio");
+    var p2 = supabase.from("acoes").select("*");
+    return Promise.all([p1,p2]).then(function(res){
+      if(res[0].error) throw res[0].error;
+      if(res[1].error) throw res[1].error;
+      entries = (res[0].data||[]).map(rowToEntry);
+      acoes = (res[1].data||[]).map(rowToAcao);
+    });
+  }
+  function upsertEntry(entry){
+    if(!STORAGE_OK) return;
+    supabase.from("entries").upsert(entryToRow(entry)).then(function(res){
+      if(res.error){ console.error("Falha ao salvar lançamento.", res.error); alert("Não foi possível salvar no banco. Tente novamente."); }
+    });
+  }
+  function removeEntry(id){
+    if(!STORAGE_OK) return;
+    supabase.from("entries").delete().eq("id", id).then(function(res){
+      if(res.error){ console.error("Falha ao excluir lançamento.", res.error); alert("Não foi possível excluir no banco."); }
+    });
+  }
+  function upsertAcao(acao){
+    if(!STORAGE_OK) return;
+    supabase.from("acoes").upsert(acaoToRow(acao)).then(function(res){
+      if(res.error){ console.error("Falha ao salvar ação.", res.error); alert("Não foi possível salvar no banco. Tente novamente."); }
+    });
+  }
+  function removeAcao(id){
+    if(!STORAGE_OK) return;
+    supabase.from("acoes").delete().eq("id", id).then(function(res){
+      if(res.error){ console.error("Falha ao excluir ação.", res.error); alert("Não foi possível excluir no banco."); }
+    });
+  }
+
+  // ---------- Navegação por abas ----------
+  var tabButtons = document.querySelectorAll(".tabbtn");
+  var tabs = { registro: document.getElementById("tab-registro"), dashboard: document.getElementById("tab-dashboard"), acoes: document.getElementById("tab-acoes") };
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      tabButtons.forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      Object.keys(tabs).forEach(function(k){ tabs[k].classList.remove("active"); });
+      tabs[btn.dataset.tab].classList.add("active");
+      if(btn.dataset.tab === "dashboard") renderDashboard();
+      if(btn.dataset.tab === "acoes") renderAcoes();
+    });
+  });
+
+  // ---------- Registro: formulário ----------
+  var fData = document.getElementById("f-data");
+  var fInicio = document.getElementById("f-inicio");
+  var fFim = document.getElementById("f-fim");
+  var fPlanejada = document.getElementById("f-planejada");
+  var fRealizada = document.getElementById("f-realizada");
+  var fQuadrante = document.getElementById("f-quadrante");
+  var fLadrao = document.getElementById("f-ladrao");
+  var fObs = document.getElementById("f-obs");
+  var duracaoPreview = document.getElementById("duracaoPreview");
+  var entryForm = document.getElementById("entryForm");
+  var submitBtn = document.getElementById("submitBtn");
+  var cancelEditBtn = document.getElementById("cancelEditBtn");
+  var formTitle = document.getElementById("formTitle");
+  var viewDate = document.getElementById("viewDate");
+
+  fData.value = todayISO();
+  viewDate.value = todayISO();
+
+  function updateDuracaoPreview(){
+    var i = fInicio.value, f = fFim.value;
+    if(!i || !f){
+      duracaoPreview.className = "duracao-preview";
+      duracaoPreview.innerHTML = "Preencha início e fim para calcular a duração.";
+      return;
+    }
+    var min = calcMinutos(i,f);
+    var overnight = (f <= i);
+    duracaoPreview.className = "duracao-preview" + (overnight ? " warn" : "");
+    duracaoPreview.innerHTML = "Duração: <strong>"+fmtDuracao(min)+"</strong>" + (overnight ? " — fim no dia seguinte" : "");
+  }
+  fInicio.addEventListener("input", updateDuracaoPreview);
+  fFim.addEventListener("input", updateDuracaoPreview);
+
+  function resetForm(){
+    entryForm.reset();
+    fData.value = viewDate.value || todayISO();
+    updateDuracaoPreview();
+    editingEntryId = null;
+    submitBtn.textContent = "Registrar atividade";
+    formTitle.textContent = "Registrar atividade";
+    cancelEditBtn.style.display = "none";
+  }
+
+  entryForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var minutos = calcMinutos(fInicio.value, fFim.value);
+    var entry = {
+      id: editingEntryId || uid(),
+      data: fData.value,
+      inicio: fInicio.value,
+      fim: fFim.value,
+      minutos: minutos,
+      planejada: fPlanejada.value.trim(),
+      realizada: fRealizada.value.trim(),
+      quadrante: fQuadrante.value,
+      ladrao: fLadrao.value,
+      obs: fObs.value.trim()
+    };
+    if(editingEntryId){
+      var idx = entries.findIndex(function(x){ return x.id===editingEntryId; });
+      if(idx>-1) entries[idx] = entry;
+    } else {
+      entries.push(entry);
+    }
+    upsertEntry(entry);
+    viewDate.value = entry.data;
+    resetForm();
+    renderEntryList();
+  });
+
+  cancelEditBtn.addEventListener("click", resetForm);
+
+  function editEntry(id){
+    var e = entries.find(function(x){ return x.id===id; });
+    if(!e) return;
+    editingEntryId = id;
+    fData.value = e.data; fInicio.value = e.inicio; fFim.value = e.fim;
+    fPlanejada.value = e.planejada; fRealizada.value = e.realizada;
+    fQuadrante.value = e.quadrante; fLadrao.value = e.ladrao; fObs.value = e.obs;
+    updateDuracaoPreview();
+    submitBtn.textContent = "Salvar alterações";
+    formTitle.textContent = "Editar atividade";
+    cancelEditBtn.style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function deleteEntry(id){
+    entries = entries.filter(function(x){ return x.id!==id; });
+    removeEntry(id);
+    renderEntryList();
+  }
+
+  viewDate.addEventListener("change", renderEntryList);
+
+  function renderEntryList(){
+    var day = viewDate.value;
+    var list = entries.filter(function(x){ return x.data===day; })
+                       .sort(function(a,b){ return a.inicio.localeCompare(b.inicio); });
+    var container = document.getElementById("entryList");
+    var totalMin = list.reduce(function(s,x){ return s+x.minutos; }, 0);
+    document.getElementById("dayTotal").innerHTML = list.length
+      ? (list.length+" atividade"+(list.length>1?"s":"")+" · <strong>"+fmtDuracao(totalMin)+"</strong> no total")
+      : "";
+
+    if(!list.length){
+      container.innerHTML = '<div class="empty">Nenhuma atividade registrada nesta data ainda.</div>';
+      return;
+    }
+    container.innerHTML = list.map(function(e){
+      var q = QUADRANTES[e.quadrante];
+      var titulo = e.realizada || e.planejada || "(sem descrição)";
+      var subLinhas = [];
+      if(e.planejada && e.planejada !== e.realizada) subLinhas.push("Planejado: "+escapeHtml(e.planejada));
+      return '' +
+        '<div class="entry">' +
+          '<div class="entry-top">' +
+            '<span class="entry-time tabular">' + e.inicio + '–' + e.fim + ' <strong>· ' + fmtDuracao(e.minutos) + '</strong></span>' +
+            '<div class="entry-actions">' +
+              '<button class="btn-icon" onclick="GT.editEntry(\''+e.id+'\')">Editar</button>' +
+              '<button class="btn-icon" onclick="GT.deleteEntry(\''+e.id+'\')">Excluir</button>' +
+            '</div>' +
+          '</div>' +
+          '<p class="entry-title">' + escapeHtml(titulo) + '</p>' +
+          (subLinhas.length ? '<p class="entry-sub">'+subLinhas.join(" · ")+'</p>' : '') +
+          '<div class="entry-tags">' +
+            '<span class="qchip '+e.quadrante.toLowerCase()+'">'+e.quadrante+' · '+q.label+'</span>' +
+            (e.ladrao && e.ladrao!=="Nenhum" ? '<span class="thief-tag">⚠ '+escapeHtml(e.ladrao)+'</span>' : '') +
+          '</div>' +
+          (e.obs ? '<p class="entry-obs">'+escapeHtml(e.obs)+'</p>' : '') +
+        '</div>';
+    }).join("");
+  }
+
+  // ---------- Dashboard ----------
+  var dPeriodo = document.getElementById("d-periodo");
+  var dRef = document.getElementById("d-ref");
+  dRef.value = todayISO();
+  dPeriodo.addEventListener("change", renderDashboard);
+  dRef.addEventListener("change", renderDashboard);
+
+  function currentRange(){
+    var tipo = dPeriodo.value, ref = dRef.value || todayISO();
+    if(tipo==="dia") return [ref, ref];
+    if(tipo==="mes") return monthRange(ref);
+    return weekRange(ref);
+  }
+
+  function renderDashboard(){
+    var range = currentRange();
+    var start = range[0], end = range[1];
+    document.getElementById("rangeLabel").textContent = "De " + isoToLabel(start) + " até " + isoToLabel(end);
+
+    var list = entries.filter(function(x){ return x.data>=start && x.data<=end; });
+    var totalMin = list.reduce(function(s,x){ return s+x.minutos; }, 0);
+    var q2Min = list.filter(function(x){ return x.quadrante==="Q2"; }).reduce(function(s,x){ return s+x.minutos; }, 0);
+
+    document.getElementById("statAtividades").textContent = list.length;
+    document.getElementById("statHoras").textContent = fmtHoras(totalMin);
+    document.getElementById("statQ2").textContent = totalMin ? Math.round(q2Min/totalMin*100)+"%" : "0%";
+    document.getElementById("statAbertas").textContent = acoes.filter(function(a){ return a.status!=="Concluída"; }).length;
+
+    // distribuição por quadrante
+    var qHtml = ["Q1","Q2","Q3","Q4"].map(function(q){
+      var min = list.filter(function(x){ return x.quadrante===q; }).reduce(function(s,x){ return s+x.minutos; }, 0);
+      var pct = totalMin ? Math.round(min/totalMin*1000)/10 : 0;
+      return '' +
+        '<div class="qrow">' +
+          '<span class="qchip '+q.toLowerCase()+'">'+q+'</span>' +
+          '<div class="qbar-track"><div class="qbar-fill" style="width:'+pct+'%;background:var('+QUADRANTES[q].cssvar+');"></div></div>' +
+          '<span class="qvals tabular"><strong>'+fmtHoras(min)+'</strong> · '+pct+'%</span>' +
+        '</div>';
+    }).join("");
+    document.getElementById("qBreakdown").innerHTML = qHtml;
+
+    // por dia
+    var dates = listDatesBetween(start, end);
+    var rows = dates.map(function(d){
+      var dayList = entries.filter(function(x){ return x.data===d; });
+      var dTot = dayList.reduce(function(s,x){ return s+x.minutos; }, 0);
+      var dQ2 = dayList.filter(function(x){ return x.quadrante==="Q2"; }).reduce(function(s,x){ return s+x.minutos; }, 0);
+      var pct = dTot ? Math.round(dQ2/dTot*100) : 0;
+      return '<tr><td>'+isoToLabel(d)+'</td><td class="tabular">'+fmtHoras(dTot)+'</td><td class="tabular">'+fmtHoras(dQ2)+'</td><td class="tabular">'+(dTot?pct+'%':'—')+'</td></tr>';
+    }).join("");
+    document.getElementById("dayTable").innerHTML =
+      '<thead><tr><th>Data</th><th>Horas totais</th><th>Horas no Q2</th><th>% no Q2</th></tr></thead><tbody>'+rows+'</tbody>';
+  }
+
+  // ---------- Ações de melhoria ----------
+  var aIdentificada = document.getElementById("a-identificada");
+  var aPrazo = document.getElementById("a-prazo");
+  var aAcao = document.getElementById("a-acao");
+  var aCausa = document.getElementById("a-causa");
+  var aQatual = document.getElementById("a-qatual");
+  var aQdesejado = document.getElementById("a-qdesejado");
+  var aResponsavel = document.getElementById("a-responsavel");
+  var aStatus = document.getElementById("a-status");
+  var aBeneficio = document.getElementById("a-beneficio");
+  var aEvidencia = document.getElementById("a-evidencia");
+  var acaoForm = document.getElementById("acaoForm");
+  var acSubmitBtn = document.getElementById("acSubmitBtn");
+  var acCancelBtn = document.getElementById("acCancelBtn");
+  var acFormTitle = document.getElementById("acFormTitle");
+
+  aIdentificada.value = todayISO();
+
+  function resetAcaoForm(){
+    acaoForm.reset();
+    aIdentificada.value = todayISO();
+    aQdesejado.value = "Q2";
+    editingAcaoId = null;
+    acSubmitBtn.textContent = "Adicionar ação";
+    acFormTitle.textContent = "Nova ação";
+    acCancelBtn.style.display = "none";
+  }
+
+  acaoForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var acao = {
+      id: editingAcaoId || uid(),
+      identificadaEm: aIdentificada.value,
+      acao: aAcao.value.trim(),
+      causa: aCausa.value.trim(),
+      quadranteAtual: aQatual.value,
+      quadranteDesejado: aQdesejado.value,
+      responsavel: aResponsavel.value.trim(),
+      prazo: aPrazo.value,
+      status: aStatus.value,
+      beneficio: aBeneficio.value.trim(),
+      evidencia: aEvidencia.value.trim()
+    };
+    if(editingAcaoId){
+      var idx = acoes.findIndex(function(x){ return x.id===editingAcaoId; });
+      if(idx>-1) acoes[idx] = acao;
+    } else {
+      acoes.push(acao);
+    }
+    upsertAcao(acao);
+    resetAcaoForm();
+    renderAcoes();
+  });
+  acCancelBtn.addEventListener("click", resetAcaoForm);
+
+  function editAcao(id){
+    var a = acoes.find(function(x){ return x.id===id; });
+    if(!a) return;
+    editingAcaoId = id;
+    aIdentificada.value = a.identificadaEm; aPrazo.value = a.prazo || "";
+    aAcao.value = a.acao; aCausa.value = a.causa;
+    aQatual.value = a.quadranteAtual; aQdesejado.value = a.quadranteDesejado;
+    aResponsavel.value = a.responsavel; aStatus.value = a.status;
+    aBeneficio.value = a.beneficio; aEvidencia.value = a.evidencia;
+    acSubmitBtn.textContent = "Salvar alterações";
+    acFormTitle.textContent = "Editar ação";
+    acCancelBtn.style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function deleteAcao(id){
+    acoes = acoes.filter(function(x){ return x.id!==id; });
+    removeAcao(id);
+    renderAcoes();
+  }
+
+  function renderAcoes(){
+    var hojeISO = todayISO();
+    var abertas = acoes.filter(function(a){ return a.status!=="Concluída"; });
+    var atrasadas = abertas.filter(function(a){ return a.prazo && a.prazo < hojeISO; });
+    var destinoQ2 = acoes.filter(function(a){ return a.quadranteDesejado==="Q2" && a.status!=="Concluída"; });
+    var concluidas = acoes.filter(function(a){ return a.status==="Concluída"; });
+
+    document.getElementById("acAbertas").textContent = abertas.length;
+    document.getElementById("acAtrasadas").textContent = atrasadas.length;
+    document.getElementById("acDestinoQ2").textContent = destinoQ2.length;
+    document.getElementById("acConcluidas").textContent = concluidas.length;
+
+    var list = acoes.slice().sort(function(a,b){
+      var pa = a.prazo || "9999-99-99", pb = b.prazo || "9999-99-99";
+      return pa.localeCompare(pb);
+    });
+
+    var container = document.getElementById("acaoList");
+    if(!list.length){
+      container.innerHTML = '<div class="empty">Nenhuma ação registrada ainda.</div>';
+      return;
+    }
+    container.innerHTML = list.map(function(a){
+      var isAtrasada = a.status!=="Concluída" && a.prazo && a.prazo < hojeISO;
+      var statusClass = "status-" + a.status.replace(/\s+/g, "-");
+      var metaBits = [];
+      metaBits.push('<span class="qchip '+a.quadranteAtual.toLowerCase()+'">'+a.quadranteAtual+'</span> → <span class="qchip '+a.quadranteDesejado.toLowerCase()+'">'+a.quadranteDesejado+'</span>');
+      if(a.responsavel) metaBits.push(escapeHtml(a.responsavel));
+      if(a.prazo) metaBits.push((isAtrasada ? '<span class="atraso">Prazo '+isoToLabel(a.prazo)+' (atrasada)</span>' : 'Prazo '+isoToLabel(a.prazo)));
+      return '' +
+        '<div class="acao'+(isAtrasada?' atrasada':'')+'">' +
+          '<div class="acao-top">' +
+            '<p class="acao-title">'+escapeHtml(a.acao||"(sem título)")+'</p>' +
+            '<span class="status-badge '+statusClass+'">'+a.status+'</span>' +
+          '</div>' +
+          (a.causa ? '<p class="entry-sub">Causa: '+escapeHtml(a.causa)+'</p>' : '') +
+          '<div class="acao-meta">'+metaBits.join(" · ")+'</div>' +
+          (a.beneficio ? '<p class="entry-obs">Benefício: '+escapeHtml(a.beneficio)+'</p>' : '') +
+          (a.evidencia ? '<p class="entry-obs">Evidência: '+escapeHtml(a.evidencia)+'</p>' : '') +
+          '<div class="entry-actions" style="margin-top:8px;">' +
+            '<button class="btn-icon" onclick="GT.editAcao(\''+a.id+'\')">Editar</button>' +
+            '<button class="btn-icon" onclick="GT.deleteAcao(\''+a.id+'\')">Excluir</button>' +
+          '</div>' +
+        '</div>';
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+
+  // topbar date
+  document.getElementById("topbarDate").textContent = new Date().toLocaleDateString("pt-BR", {weekday:"short", day:"2-digit", month:"short"});
+
+  // expõe funções usadas em atributos inline
+  window.GT = { editEntry: editEntry, deleteEntry: deleteEntry, editAcao: editAcao, deleteAcao: deleteAcao };
+
+  // ---------- Inicialização ----------
+  if(!STORAGE_OK){
+    document.getElementById("entryList").innerHTML = '<div class="empty">Supabase não configurado. Preencha SUPABASE_URL e SUPABASE_ANON_KEY no início do script.</div>';
+    document.getElementById("acaoList").innerHTML = '<div class="empty">Supabase não configurado.</div>';
+    renderDashboard();
+  } else {
+    document.getElementById("entryList").innerHTML = '<div class="loading">Carregando lançamentos…</div>';
+    document.getElementById("acaoList").innerHTML = '<div class="loading">Carregando ações…</div>';
+
+    loadAll().then(function(){
+      renderEntryList();
+      renderDashboard();
+      renderAcoes();
+    }).catch(function(err){
+      console.error("Falha ao carregar dados do Supabase.", err);
+      entries = []; acoes = [];
+      document.getElementById("entryList").innerHTML = '<div class="empty">Não foi possível carregar os dados. Verifique a configuração do Supabase.</div>';
+      renderDashboard(); renderAcoes();
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
